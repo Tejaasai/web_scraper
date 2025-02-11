@@ -32,7 +32,6 @@ def authenticate_user(username, password):
 # Password: admin@123
 # Scrambled Code (Hash): ef92b778bafe771e89245b89ecbc3457b63e4e3
 
-
 def login_form():
     """Display login form and handle authentication"""
     with st.form("Login"):
@@ -54,12 +53,13 @@ def logout():
 # ---------------------- Enhanced Scraping Function ----------------------
 def get_headers():
     """Generate random headers for each request"""
-# Pretends to be different browsers (random user agents) 
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Safari/605.1.15",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36"
     ]
+
+    # Pretends to be different browsers (random user agents) 
     
     return {
         'User-Agent': random.choice(user_agents),
@@ -95,11 +95,11 @@ def scrape_flipkart(urls, num_pages):
                 url = urlunparse(parsed_url._replace(query=query))
 
                 # Make request through proxy
-                api_key=os.getenv("SCRAPER_API_KEY")
+                api_key = os.getenv("SCRAPER_API_KEY")
                 scraperapi_url = f"http://api.scraperapi.com?api_key={api_key}&url={url}"
+                response = requests.get(scraperapi_url, headers=get_headers(), timeout=20)
                 #It uses a pool of thousands of IP addresses from different regions, so websites can’t tell it’s scraping. 
                 # Every request looks like it’s coming from a new visitor.
-                response = requests.get(scraperapi_url, headers=get_headers(), timeout=20)
 
                 # Check for blocking
                 if response.status_code in [403, 429, 503]:
@@ -116,7 +116,7 @@ def scrape_flipkart(urls, num_pages):
                 for product in products:
                     # Product Name
                     name = product.find(['a', 'div'], class_=['KzDlHZ', 'wjcEIp', 'WKTcLC', 'WKTcLC BwBZTg'])
-                    all_data['Name'].append(name.text.strip('div',class_='UkUFwK')() if name else "N/A")
+                    all_data['Name'].append(name.text.strip() if name else "N/A")
 
                     # Price
                     price = product.find('div', class_=['Nx9bqj','Nx9bqj _4b5DiR'])
@@ -127,7 +127,7 @@ def scrape_flipkart(urls, num_pages):
                     all_data['Rating'].append(rating.text.strip() if rating else "0")
 
                     # Discount
-                    discount = product.find
+                    discount = product.find('div',class_='UkUFwK')
                     all_data['Discount'].append(discount.text.split('%')[0] if discount else "0")
 
             except Exception as e:
@@ -159,7 +159,7 @@ def main():
         help="Example: https://www.flipkart.com/search?q=smartphones"
     ).splitlines()
 
-    # Scraping Limit set to three pages
+    # Scraping Limits
     num_pages = st.sidebar.slider(
         "📄 Pages per URL (Max 3)", 
         min_value=1, 
@@ -271,7 +271,9 @@ def main():
                 plt.ylabel("Price (₹)")
                 st.pyplot(fig)
         #Rating Distribution
+        
         with tabs[1]:
+            st.subheader("⭐ Rating Analysis")
             col1, col2 = st.columns(2)
             with col1:
                 st.write("**Rating Distribution**")
